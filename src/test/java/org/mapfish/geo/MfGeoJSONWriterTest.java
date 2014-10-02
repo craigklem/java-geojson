@@ -21,9 +21,12 @@ package org.mapfish.geo;
 
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.GeometryCollection;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.LinearRing;
+
 import junit.framework.TestCase;
+
 import org.json.JSONStringer;
 import org.json.JSONWriter;
 import org.json.JSONException;
@@ -51,8 +54,6 @@ public class MfGeoJSONWriterTest extends TestCase
         JSONStringer stringer;
         MfGeoJSONWriter builder;
 
-        Geometry g;
-
         MfFeature f1;
         MfFeature f2;
         MfFeatureCollection fc;
@@ -67,10 +68,10 @@ public class MfGeoJSONWriterTest extends TestCase
         // encodeGeometry POINT test
         stringer = new JSONStringer();
         builder = new MfGeoJSONWriter(stringer);
-        g = new GeometryFactory().createPoint(coord1);
+        Geometry point = new GeometryFactory().createPoint(coord1);
         geojsonExpected =
             "{\"type\":\"Point\",\"coordinates\":[1.1,2.2]}";
-        builder.encodeGeometry(g);
+        builder.encodeGeometry(point);
         geojsonResulted = stringer.toString();
         assertTrue(geojsonExpected.equals(geojsonResulted));
 
@@ -78,10 +79,10 @@ public class MfGeoJSONWriterTest extends TestCase
         stringer = new JSONStringer();
         builder = new MfGeoJSONWriter(stringer);
         Coordinate[] coordArrayLS = {coord1, coord2};
-        g = new GeometryFactory().createLineString(coordArrayLS);
+        Geometry ls = new GeometryFactory().createLineString(coordArrayLS);
         geojsonExpected =
             "{\"type\":\"LineString\",\"coordinates\":[[1.1,2.2],[3.3,4.4]]}";
-        builder.encodeGeometry(g);
+        builder.encodeGeometry(ls);
         geojsonResulted = stringer.toString();
         assertTrue(geojsonExpected.equals(geojsonResulted));
 
@@ -90,13 +91,24 @@ public class MfGeoJSONWriterTest extends TestCase
         builder = new MfGeoJSONWriter(stringer);
         Coordinate[] coordArrayLR = {coord1, coord2, coord3, coord1};
         LinearRing lr = new GeometryFactory().createLinearRing(coordArrayLR);
-        g = new GeometryFactory().createPolygon(lr, null);
+        Geometry poly = new GeometryFactory().createPolygon(lr, null);
         geojsonExpected =
             "{\"type\":\"Polygon\",\"coordinates\":[[[1.1,2.2],[3.3,4.4],[5.5,6.6],[1.1,2.2]]]}";
-        builder.encodeGeometry(g);
+        builder.encodeGeometry(poly);
         geojsonResulted = stringer.toString();
         assertTrue(geojsonExpected.equals(geojsonResulted));
 
+        // encodeGeometry GeometryCollection test
+        stringer = new JSONStringer();
+        builder = new MfGeoJSONWriter(stringer);
+        Geometry[] geo = {point, ls, poly};        
+        GeometryCollection gc = new GeometryFactory().createGeometryCollection(geo);
+        geojsonExpected =
+            "{\"type\":\"GeometryCollection\",\"geometries\":[{\"type\":\"Point\",\"coordinates\":[1.1,2.2]},{\"type\":\"LineString\",\"coordinates\":[[1.1,2.2],[3.3,4.4]]},{\"type\":\"Polygon\",\"coordinates\":[[[1.1,2.2],[3.3,4.4],[5.5,6.6],[1.1,2.2]]]}]}";
+        builder.encodeGeometry(gc);
+        geojsonResulted = stringer.toString();
+        assertTrue(geojsonExpected.equals(geojsonResulted));
+        
         // encodeFeature test
         stringer = new JSONStringer();
         builder = new MfGeoJSONWriter(stringer);
